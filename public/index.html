@@ -24,9 +24,9 @@
           </div>
 
           <div class="col-4 border text-white">
-            <!-- <div id="speedometer" style="width: 100;height: 100">
+            <div id="speedometer" style="width: 100;height: 100">
 
-            </div> -->
+            </div>
           </div>
 
           <div class="col-4 border text-white">
@@ -61,8 +61,8 @@
         var height =200;
 
         var p = Math.PI;
-        var startAngleRate = -1.4
-        var endAngleRate = 1.4
+        var startAngleRate = -1.4;
+        var endAngleRate = 1.4;
             
         var svg = d3.select("#speedometer").append("svg")
         .attr("width", width)
@@ -121,11 +121,10 @@
           .append("g")
           .attr("class","tick")
           .attr("transform",function(d,i){ return "translate(" + width/2 + "," + height/2 + ")"; });
-        /* 
-        移動と回転を同時にする場合はこっち
-        .attr("transform",function(d,i){ 
-            return "translate(" + width/2 + "," + height/2 + ")rotate(" + arcScale(d) + ")"; });
-        */
+
+        // 移動と回転を同時にする場合はこっち
+        // .attr("transform",function(d,i){ 
+        //     return "translate(" + width/2 + "," + height/2 + ")rotate(" + arcScale(d) + ")"; });
 
         // 目盛りの線
         var ticksLine = d3.line()
@@ -191,7 +190,8 @@
         //円弧追加
         AddArc(svg);
         
-
+        //線
+        AddLine(svg);
       }
 
       function AddCircle(svg){
@@ -252,8 +252,18 @@
           .attr('fill' , 'red')
           .attr('stroke' , "white");
 
+        //d3.arcでよい
       }
 
+      function AddLine(svg){
+        var linePath = svg.append("line")
+            .attr("x1",100)
+            .attr("x2",149)
+            .attr("y1",100)
+            .attr("y2",150)    
+            .attr("stroke", "white")
+            .attr("stroke-width",3);
+      }
 
     </script>
   </body>
