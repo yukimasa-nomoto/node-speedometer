@@ -1,0 +1,16 @@
+.meter{
+    stroke:linear-gradient(white,gray);
+}
+.stop-left{
+    stop-color: greenyellow;
+}
+.stop-middle{
+    stop-color: orange;
+}
+.stop-right{
+    stop-color: red;
+}
+.filled{
+    stroke: url(#mainGradient);
+    fill:url(#mainGradient);
+}

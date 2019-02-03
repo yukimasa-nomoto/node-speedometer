@@ -8,15 +8,253 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
 
+    <link rel="stylesheet" href="css/speedometer.css">
     <title>Hello, world!</title>
   </head>
-  <body>
-    <h1>Hello, world2!</h1>
+  <body class="bg-dark">
+    <div class="container">
+        <div class="row">
+            <h1 class="text-white">SpeedoMeter Test!</h1>
+        </div>
+
+        <div class="row">
+          <div class="col-4 border text-white">
+            a
+            
+          </div>
+
+          <div class="col-4 border text-white">
+            <!-- <div id="speedometer" style="width: 100;height: 100">
+
+            </div> -->
+          </div>
+
+          <div class="col-4 border text-white">
+            <div id="test">
+
+            </div>
+          </div>
+              
+        </div>
+
+    </div>
+
+
 
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <script type="text/javascript">
+      $(function(){
+        MakeSpeedoMeter();
+
+        Test();
+      });
+
+      function MakeSpeedoMeter(){
+        // SVGの幅
+        var width = 200;
+        var height =200;
+
+        var p = Math.PI;
+        var startAngleRate = -1.4
+        var endAngleRate = 1.4
+            
+        var svg = d3.select("#speedometer").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+        // メーターのグループ
+        var translated = svg.append("g")
+          .attr("transform","translate(" + width/2 + "," + height/2 + ")");
+
+        var arc = d3.arc()
+          .innerRadius(55)
+          .outerRadius(60)
+          .startAngle(startAngleRate * p/2) // ここはラジアン
+          .endAngle(endAngleRate * p/2 )
+
+        // メーターの範囲を設定
+        var arcScale = d3.scaleLinear()
+            .domain([0 , 100])
+            .range([startAngleRate*90, endAngleRate*90]); // ここは度
+
+        var svgDefs = svg.append('defs');
+        var mainGradient = svgDefs.append('linearGradient')
+            .attr('id', 'mainGradient');
+
+        // グラデーションの設定（3色）
+        mainGradient.append('stop')
+            .attr('class', 'stop-left')
+            .attr('offset', '0');
+        mainGradient.append('stop')
+            .attr('class', 'stop-middle')
+            .attr('offset', '0.6');
+        mainGradient.append('stop')
+            .attr('class', 'stop-right')
+            .attr('offset', '1');
+
+        // メーターバー部分の追加
+        translated.append("path")
+            .attr("d", arc)
+            .attr("class", "filled")
+
+        // メーターの針の追加 
+        var linePath = translated.append("line")
+            .attr("x1",0)
+            .attr("x2",0)
+            .attr("y1",0)
+            .attr("y2",-45)    
+            .attr("stroke", "black")
+            .attr("stroke-width",3)
+            .attr("transform", "rotate(" +  arcScale(0) + ")" ); // 初期位置は0
+
+        // 目盛の追加
+        // 0 を100個の5間隔で配列を作成
+        var ticks = d3.range(0, 105, 5);
+        // グループ要素を目盛数分追加する
+        var ticks_g = svg.selectAll(".tick").data(ticks).enter()
+          .append("g")
+          .attr("class","tick")
+          .attr("transform",function(d,i){ return "translate(" + width/2 + "," + height/2 + ")"; });
+        /* 
+        移動と回転を同時にする場合はこっち
+        .attr("transform",function(d,i){ 
+            return "translate(" + width/2 + "," + height/2 + ")rotate(" + arcScale(d) + ")"; });
+        */
+
+        // 目盛りの線
+        var ticksLine = d3.line()
+          .x(0) 
+          .y(function(d) { return d; });
+
+        // 目盛りの追加
+        ticks_g.append("path")
+          .attr("d", function(d){ 
+            if(d % 20 == 0 ){ return ticksLine([ -50 , -45]); } // 主目盛
+            else{ return ticksLine([-50 , -48]); }} // 補助目盛
+          )
+          .attr("stroke", "gray")
+          .attr("stroke-width",2)
+          .attr("stroke-linecap","round")
+          .attr("transform",function(d,i){ return "rotate(" + arcScale(d) + ")"; });
+          
+        // ラベル 位置は角度から(x,y)を求めて、貼り付け
+        ticks_g.append("text")
+          .attr("x",  function(d){ return 32 * Math.sin(arcScale(d) * (Math.PI / 180)); }) 
+          .attr("y" , function(d){ return -32 * Math.cos(arcScale(d) * (Math.PI / 180)) + 2; })
+          .attr("text-anchor", "middle")
+          .attr("fill", "black")
+          .attr("font-size", "14px")
+          .attr("font-family", "sans-serif")
+          .text(function(d){ if(d % 20 == 0 ){ return d; }});
+
+        // メータの保持する値
+        var value = 0; 
+        var tmp = 0;
+
+        // メータの更新
+        function update(){
+          // 乱数取得
+          var rand = d3.randomUniform(100)();
+          value = tmp;
+          
+          // 針の動作アニメーション 以前の値⇒更新後の値へ針を動かす
+          var t = d3.transition().duration(1000)
+          linePath.transition(t)
+          .attrTween("transform", function() { 
+          return d3.interpolateString("rotate(" + arcScale(value) + ")", "rotate(" + arcScale(rand)+ ")"); });
+          // 値を保持  
+          tmp = rand;
+        }
+
+        // 1秒ごとに更新を呼び出し
+        d3.interval(update, 1000 );
+
+
+
+      }
+
+      function Test(){
+
+        var svg = d3.select("#test").append("svg")
+        .attr("width", "200")
+        .attr("height", "200");
+
+        //円追加
+        AddCircle(svg);
+
+        //円弧追加
+        AddArc(svg);
+        
+
+      }
+
+      function AddCircle(svg){
+        svg.append('circle')
+          .attr("cy",60)
+          .attr("cx",60)
+          .attr("r",40)
+          .attr("stroke" , "white")
+          .attr("fill" , "none");
+      }
+
+      function AddArc(svg){
+        //<path d="M cx,cy L x1 y1  start  rx ry start f1 f2 dx,dy z"  fill="red" stroke="black" />        // <path id="arc1_cmd" d="M 0,0 L 78,-45 a 90 90 -30 0 1 0 90 z" fill="red" stroke="white"/>      }
+        // 円弧中心 cx,cy
+        // 円弧開始点:(x1,y1)円弧終点(x,y2) dx=x2-x1,dy=y2-y1
+        // rx:x軸半径 ry:y軸半径
+        // start:傾き(度) f1:[0の時180度以内の円弧、1の時180度以上の円弧] f2:[0の時反時計回り 1の時時計回り]
+        // svg.append('path')
+        //   .attr('d' , "M 0,0 L 78,-45 a 90 90 -30 0 1 0 90 z")
+        //   .attr('fill' , 'red')
+        //   .attr('stroke' , "white");
+
+        var cx = 100;
+        var cy = 100;
+        var r = 50;
+        var startDegree = 30;
+        var endDegree = 180;
+        var startRadian = startDegree  * (Math.PI / 180);
+        var endRadian = endDegree * (Math.PI / 180);
+
+        var x1 = cx + r * Math.cos(startRadian);
+        console.log(Math.cos(startRadian))
+        console.log(r * Math.cos(startRadian))
+        console.log(x1);
+        var x2 = cx + r * Math.cos(endRadian);
+        var y1 = cy + r * Math.sin(startRadian);
+        var y2 = cy + r * Math.sin(endRadian);
+
+        var dx = x2-x1;
+        var dy = y2-y1;
+        
+        var f1 = 0;
+        if( (endDegree - startDegree) >= 180){
+          f1 = 1;
+        }
+        var f2 = 1;
+
+        var args = "M " + cx + "," + cy 
+              + " L " + x1 + "," + y1
+              + " a " + r + " " + r + " " 
+                + startDegree + " " + f1 + " " + f2 
+                + " " + dx + " " + dy + " z";
+
+        console.log(args);
+
+        svg.append('path')
+          .attr('d' , args)
+          .attr('fill' , 'red')
+          .attr('stroke' , "white");
+
+      }
+
+
+    </script>
   </body>
 </html>
