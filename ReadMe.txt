@@ -6,3 +6,5 @@
 
     https://bl.ocks.org/rishabhfitkids/305e8da9f4311917c6046afcf7bfd0bc
 ・svgにはLayerあるか？
+
+Minimal animated SVG gauge charts
