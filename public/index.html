@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html>
   <head>
     <!-- Required meta tags -->
@@ -24,9 +24,27 @@
           </div>
 
           <div class="col-4 border text-white">
-            <div id="speedometer" style="width: 100;height: 100">
+              <div class="row">
+                  <div id="speedometer" class="col-12">
+                      <svg>
 
-            </div>
+                      </svg>
+                  </div>
+              </div>
+              <div class="row">
+                  <div class="form-group">
+
+                      <div class="col-6">
+                          <input type="text" id="testvalue" value="10" />
+                      </div>
+
+                      <div class="col-4">
+                          <button id="btntest" class="btn btn-primary">数値</button>
+                      </div>
+
+                  </div>
+
+              </div>
           </div>
 
           <div class="col-4 border text-white">
@@ -50,9 +68,17 @@
 
     <script type="text/javascript">
       $(function(){
-        MakeSpeedoMeter();
+        //MakeSpeedoMeter();
 
-        Test();
+        //Test();
+
+          AddCscSpeedMeter($('#testvalue').val());
+
+          $('#btntest').click(function () {
+              AddCscSpeedMeter($('#testvalue').val());
+          });
+
+
       });
 
       function MakeSpeedoMeter(){
@@ -264,6 +290,254 @@
             .attr("stroke", "white")
             .attr("stroke-width",3);
       }
+
+
+        function AddCscSpeedMeter(speedValue) {
+            // SVGの幅
+            var width = 200;
+            var height = 200;
+
+            var meterInnerRadius = 50;
+            var meterOuterRadius = 85;
+            var speedPadding = 5;
+
+            var minimumSpeed = 0;
+            var maxSpeed = 100;
+
+            var p = Math.PI;
+            var startAngleRate = -1.5;
+            var endAngleRate = 1;
+
+            var arcMin = startAngleRate * Math.PI / 2;
+            var arcMax = endAngleRate * Math.PI / 2;
+
+            dataValue = function (d) { return +d; }
+
+            //不要予定
+            var dataDomain = [0, 50, 100];
+            var colorOptions = ["#d7191c", "#efef5d", "#1a9641"];
+            var colorScale = d3.scaleLinear().domain(dataDomain).range(colorOptions);
+
+            var data = [];
+
+            data[0] = speedValue;
+            //data = data.map(function (d, i) {
+            //    return dataValue(d);
+            //});
+
+            //console.log("arcMin", arcMin);
+            //console.log("arcMax", arcMax);
+
+            var svg = d3.select("#speedometer svg")
+                .attr("width", width)
+                .attr("height", height)
+                .attr("class", "border border-danger")
+                ;
+
+            svg = d3.select("#speedometer svg").data([data]);
+
+
+            //-------------------------
+            //  メーター
+            //-------------------------
+            // メーターのグループ
+            var gEnter = svg.append("g")
+                .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+            var arcGEnter = gEnter.append("g").attr("class", "arc");
+
+            arcGEnter.append("path").attr("class", "bg-arc");
+
+            arcGEnter.append("path").attr("class", "bg-arc-second");
+
+            //メーター
+            var arc = d3.arc()
+                .innerRadius(meterInnerRadius)
+                .outerRadius(meterOuterRadius)
+                .startAngle(arcMin)
+                ;
+
+            //色違い用
+            var secondArc = d3.arc()
+                .innerRadius(meterInnerRadius)
+                .outerRadius(meterOuterRadius)
+                .startAngle(0)
+                ;
+
+
+            // メーターバー部分の追加
+            arcGEnter.append("path").attr("class", "data-arc")
+                .datum({ endAngle: arcMin, startAngle: arcMin, score: dataDomain[0] })
+                .attr("d", arc)
+                .style("fill", colorScale(dataDomain[0]))
+                .each(function (d) { this._current = d; });
+
+
+            // メーターの範囲を設定
+            var arcScale = d3.scaleLinear()
+                .domain([minimumSpeed, maxSpeed])
+                .range([arcMin, arcMax]);
+
+
+            var meterScale = d3.scaleLinear()
+                .domain([minimumSpeed, maxSpeed])
+                .range([startAngleRate * 90, endAngleRate * 90]);   //角度
+
+            //---------------------------
+            //  Speed表示
+            //---------------------------
+            arcGEnter.append('circle')
+                .attr("cx", 0)
+                .attr("cy", 0)
+                .attr("r", meterInnerRadius - speedPadding)
+                .attr("fill", "gray");
+
+            arcGEnter.append('text')
+                .attr('x', 0 - (meterInnerRadius - speedPadding) / 2)
+                .attr('y', -10)
+                .text('Speed')
+                .attr('fill', 'white')
+                ;
+
+            arcGEnter.append('text')
+                .attr('x', 0)
+                .attr('y', 20)
+                .text(data[0])
+                .attr('fill', 'white')
+                .attr("font-size", "1.2em")
+                .attr("font-family", "sans-serif")
+                .attr("text-anchor", "end")
+                .attr("id", "speedvalue")
+                ;
+            arcGEnter.append('text')
+                .attr('x', 5)
+                .attr('y', 20)
+                .text('km/h')
+                .attr('fill', 'white')
+                .attr("font-size", "0.7em")
+                .attr("font-family", "sans-serif")
+                ;
+
+            //---------------------
+            //  目盛り表示
+            //---------------------
+            // 目盛の追加
+            // 0 を100個の5間隔で配列を作成
+            var ticks = d3.range(0, 105, 5);
+            // グループ要素を目盛数分追加する
+            var ticks_g = svg.selectAll(".tick").data(ticks).enter()
+                .append("g")
+                .attr("class", "tick")
+                .attr("transform", function (d, i) { return "translate(" + width / 2 + "," + height / 2 + ")"; });
+
+            // 目盛りの線
+            var ticksLine = d3.line()
+                .x(0)
+                .y(function (d) { return d; });
+
+            // 目盛りの追加
+            ticks_g.append("path")
+                .attr("d", function (d) {
+
+                    if (d % 20 == 0) {
+                        // 主目盛
+                        return ticksLine([
+                            -1 * meterOuterRadius + 1
+                            , -1 * meterInnerRadius
+                        ]);
+                    }
+                    else {
+                        // 補助目盛
+                        return ticksLine([
+                            -1 * meterOuterRadius + 20
+                            , -1 * meterInnerRadius
+                        ]);
+                    }
+                })
+                .attr("stroke", "gray")
+                .attr("stroke-width", 1)
+                .attr("stroke-linecap", "round")
+                .attr("transform", function (d, i) { return "rotate(" + meterScale(d) + ")"; });
+
+
+
+            //----------------------
+            //  Speed増加
+            //----------------------
+
+            //animation kokokara　これを描く
+            //https://bl.ocks.org/pjsier/0cd4e2eb3819e50cffea7b70a8c2cd24
+
+            //色を分ける
+            //https://bl.ocks.org/allardw/6f040b93b6bb08bd8120c079f02a6f18
+            //JavaScript対応
+
+
+            //線の微妙な動き
+            //http://deep-blend.com/jp/2014/05/d3-js-basic8-transform-translate-rotate/
+            //https://www.guidodiepen.nl/2018/07/wrapping-my-head-around-d3-rotation-transitions/
+            //https://blockbuilder.org/rishabhfitkids/305e8da9f4311917c6046afcf7bfd0bc
+            //https://bl.ocks.org/shimizu/cbd93e1b735939a9ebfd3708c2a860b3
+
+            //svgだけならこれ
+            //https://codepen.io/hpoydar/pen/MygORZ
+
+            //ここで表示 
+            svg.select("g.arc .bg-arc")
+                .datum({ endAngle: 0 })
+                .style("fill", "AliceBlue")
+                .attr("d", arc);
+
+            svg.select("g.arc .bg-arc-second")
+                .datum({ endAngle: arcMax })
+                .style("fill", "SkyBlue")
+                .attr("d", secondArc);
+
+
+
+
+
+            //アニメーション
+            function arcTween(a) {
+                //補完し結果を返す　雰囲気加速になる
+                //console.log("arcTween _current", this._current);
+                //console.log("arcTween a", a);
+
+                //補完し結果を返す　雰囲気加速になる
+                var i = d3.interpolate(this._current, a);
+
+                //console.log("i", i);
+
+                this._current = i(0);
+
+                //console.log("arcTween _current2", this._current);
+
+
+                return function (t) {
+
+                    //console.log("arc i t", arc(i(t)));
+                    return arc(i(t));       //時間に応じて処理　円を描くアニメーション
+                };
+            }
+
+
+            //console.log("endAngle", arcScale(nowSpeed));
+
+            var dataArc2 = svg.select(".data-arc")
+                .datum({ score: data[0], startAngle: arcMin, endAngle: arcScale(data[0]) })
+                .transition()
+                .duration(750)
+                .style("fill", function (d) {
+                    return colorScale(d.score);
+                })
+                .style("opacity", function (d) { return d.score < dataDomain[0] ? 0 : 1; })
+                .attrTween("d", arcTween);      //これでアニメーション
+            ;
+
+
+
+        }
+
 
     </script>
   </body>
